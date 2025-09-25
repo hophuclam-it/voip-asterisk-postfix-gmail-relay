@@ -1,0 +1,141 @@
+[general]
+static=yes
+writeprotect=no
+clearglobalvars=no
+
+
+[internal]
+;exten => sip, pri, app()
+
+exten => 8001,1,Answer()
+exten => 8001,2,Dial(SIP/8001,20)
+exten => 8001,3,Playback(vm-nobodyavail)
+exten => 8001,4,Voicemail(8001@main)
+exten => 8001,5,Hangup()
+
+exten => 8002,1,Answer()
+exten => 8002,2,Dial(SIP/8002,20)
+exten => 8002,3,Playback(vm-nobodyavail)
+exten => 8002,4,Voicemail(8002@main)
+exten => 8002,5,Hangup()
+
+;test voicemail
+exten => 9001,1,voicemailMain(8001@main)
+exten => 9001,2,Hangup()
+
+exten => 9002,1,voicemailMain(8002@main)
+exten => 9002,2,Hangup()
+
+
+;them from secretary de check neu chuyen may
+exten => 002,1,Set(__FROM_SECRETARY=1)
+ same => n,Dial(SIP/002,20)
+ same => n,Hangup()
+
+
+; Phan 1
+; --- Gọi nội bộ chung ---
+exten => _X.,1,NoOp(Call from ${CALLERID(num)} to ${EXTEN})
+
+; --- Nếu là Giám đốc (001) → gọi tất cả ---
+ same => n,GotoIf($["${CALLERID(num)}" = "001"]?allow:check_block)
+
+; --- Nếu gọi Giám đốc (001) ---
+ same => n(check_block),GotoIf($["${EXTEN}" = "001"]?check_secretary:allow2)
+
+; --- Nếu gọi Giám đốc nhưng từ Thư ký (002) → cho phép ---
+same => n(check_secretary),GotoIf($["${CALLERID(num)}" = "002" | "${FROM_SECRETARY}" = "1"]?allow:block)
+
+; --- Nếu gọi số khác Giám đốc (001) → cho phép ---
+ same => n(allow2),GotoIf($["${EXTEN}" != "001"]?allow:block)
+
+; --- Cho phép gọi ---
+ same => n(allow),Dial(SIP/${EXTEN},20)
+ same => n,Voicemail(${EXTEN}@main,u)
+ same => n,Hangup()
+
+; --- Chặn gọi Giám đốc (001) ---
+ same => n(block),Playback(/var/lib/asterisk/sounds/custom/thu-ky-chuyen-may)
+ same => n,Hangup()
+
+
+
+;=====================================================
+; Các nhóm phòng ban
+;=====================================================
+; Phòng Nhân sự [100]
+exten => 100,1,Dial(SIP/1001&SIP/1002,20)
+ same => n,Voicemail(100@main,u)
+ same => n,Hangup()
+
+; Phòng Kinh doanh [200]
+exten => 200,1,Dial(SIP/2003&SIP/2004,20)
+ same => n,Voicemail(200@main,u)
+ same => n,Hangup()
+
+; Phòng CSKH [300]
+exten => 300,1,Dial(SIP/3005&SIP/3006,20)
+ same => n,Voicemail(300@main,u)
+ same => n,Hangup()
+
+; Quầy Lễ tân [400]
+exten => 400,1,Dial(SIP/4007&SIP/4008,20)
+ same => n,Voicemail(400@main,u)
+ same => n,Hangup()
+
+
+;Phan 3 - voicemail
+; *97 = vào hộp thư thoại của chính mình (theo số gọi đến)
+exten => *97,1,Answer()
+ same => n,VoiceMailMain(${CALLERID(num)}@main)
+ same => n,Hangup()
+
+; *98 = vào menu hộp thư thoại chung, user tự nhập mailbox
+exten => *98,1,Answer()
+ same => n,VoiceMailMain(@main)
+ same => n,Hangup()
+
+
+
+;Phan 4 IVR
+
+;=====================================================
+; IVR / Auto-attendant
+;=====================================================
+
+; Bấm 19002004 → vào IVR
+exten => 19002004,1,Goto(ivr-main,s,1)
+
+[ivr-main]
+exten => s,1,Answer()
+ same => n,Background(/var/lib/asterisk/sounds/custom/chao-mung-cty-abc)
+ same => n,WaitExten(5)
+
+; --- Menu ---
+exten => 1,1,Goto(internal,200,1)   ; Sales
+exten => 2,1,Goto(internal,300,1)   ; CSKH
+exten => 0,1,Goto(internal,400,1)   ; Lễ tân
+
+; --- Timeout ---
+exten => t,1,NoOp(Khong bam phim - chuyen den le tan)
+ same => n,Playback(/var/lib/asterisk/sounds/custom/dang-ket-noi-voi-le-tan)
+ same => n,Goto(internal,400,1)         ; Chuyển đến Lễ tân
+
+
+; --- Sai phím ---
+exten => i,1,Playback(pbx-invalid)
+ same => n,Goto(ivr-main,s,1)
+
+
+
+;Phan 2 - SIP MSG
+;=====================================================
+; Xử lý tin nhắn SIP MESSAGE
+;=====================================================
+[msg]
+exten => _X.,1,NoOp(SIP MESSAGE from ${MESSAGE(from)} to ${EXTEN})
+ same => n,Set(CALLERID(num)=${MESSAGE(from)})        
+ same => n,MessageSend(sip:${EXTEN},${CALLERID(num)})
+ same => n,NoOp(Send status: ${MESSAGE_SEND_STATUS})
+ same => n,Hangup()
+

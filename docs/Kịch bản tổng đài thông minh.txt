@@ -1,0 +1,122 @@
+ví dụ tổng đài thông minh
+*098#
+
+- Các phòng ban nội bộ
+	001: Giam_doc
+	100: phong_nhan_su
+	1001: hr_1
+	1002: hr_2
+	200: phong_kinh_doanh_sale
+	2003: sale_3
+	2004: sale_4
+	300: phong_makerting_cham_soc_khach_hang
+	3005: tu_van_5
+	3006: tu_van_6
+	400: quay_le_tan
+	4007: le_tan_7
+	4008: le_tan_8
+
+Kịch bản gọi:
+
+	
+
+	=>User sử dung số *097# gọi tới công ty
+	1. Phát nhạc chờ - welcome
+	2. Phím gọi 1 => gặp bộ phận nhan su
+	3. phím gọi 2 => gặp bộ phân kinh doanh
+	4. phím gọi 3 => gặp bộ phận makerting
+	...
+yêu cầu hệ thống cho phép gọi, gọi nhóm, nhắn tin, voicemail nội bộ. Giám đốc: gọi cho các phòng ban, nhưng các phòng ban khong gọi được cho giam doc.
+
+	
+
+
+
+
+
+
+
+
+
+Kịch bản tổng đài thông minh – Giấy
+
+Tổng đài: 098# (cuộc gọi nội bộ công ty)*
+Phòng ban & extensions:
+
+Phòng ban	Extension	Nhân viên
+Giám đốc	001	Giam_doc
+Phòng nhân sự	100	HR (gồm HR_1:1001, HR_2:1002)
+Phòng kinh doanh/Sale	200	Sale (sale_3:2003, sale_4:2004)
+Phòng Marketing/CSKH	300	CSKH (tu_van_5:3005, tu_van_6:3006)
+Quầy lễ tân	400	Lễ tân (le_tan_7:4007, le_tan_8:4008)
+*1. Trường hợp người gọi sử dụng 097# gọi tới công ty
+
+Bước 1: Hệ thống trả lời và phát nhạc chờ, thông báo hướng dẫn:
+"Chào mừng đến công ty XYZ. Nhấn 1 gọi Phòng Nhân sự, 2 gọi Phòng Kinh doanh/Sale, 3 gọi Marketing/CSKH, 4 gọi Lễ tân."
+
+Bước 2: Người gọi nhấn phím:
+
+Phím	Chức năng	Mô tả
+1	Gọi Nhóm Nhân sự	Gọi đồng thời HR_1 và HR_2. Nếu không ai nhấc máy, chuyển vào voicemail phòng nhân sự.
+2	Gọi Nhóm Kinh doanh/Sale	Gọi đồng thời sale_3 và sale_4. Voicemail nếu không ai nhấc máy.
+3	Gọi Marketing/CSKH	Gọi đồng thời tư vấn 5 và tư vấn 6. Voicemail nếu không ai nhấc máy.
+4	Gọi Lễ tân	Gọi đồng thời lễ tân 7 và 8. Voicemail nếu không ai nhấc máy.
+0	Gọi Giám đốc (nếu được phép)	Chỉ Giám đốc mới có quyền gọi trực tiếp. Phòng ban khác không gọi được Giám đốc.
+
+Bước 3: Nếu nhấn phím sai (i) hoặc timeout (t):
+
+Phát thông báo lỗi hoặc kết thúc cuộc gọi:
+"Phím bạn vừa nhấn không hợp lệ. Vui lòng thử lại."
+
+2. Quy tắc truy cập đặc biệt – Giám đốc
+
+Giám đốc (001) có quyền gọi cho tất cả các phòng ban: 100, 200, 300, 400
+
+Các phòng ban không được gọi trực tiếp cho Giám đốc
+
+Voicemail Giám đốc: Nếu ai gọi mà Giám đốc không nhấc máy, lưu tin nhắn.
+
+Tin nhắn nội bộ: Giám đốc có thể gửi tin nhắn tới bất kỳ nhân viên nào trong công ty.
+
+3. Gọi nhóm & voicemail
+
+Nhóm gọi (Ring Group):
+
+Khi người gọi nhấn phím của phòng ban, hệ thống gọi đồng thời tất cả nhân viên trong nhóm.
+
+Ai nhấc máy trước sẽ kết nối.
+
+Nếu không ai nhấc máy trong 20 giây → Voicemail nhóm.
+
+Voicemail:
+
+Mỗi phòng ban có hộp thư thoại riêng.
+
+Giám đốc có voicemail riêng, không thể bị gọi từ các phòng ban.
+
+4. Tương tác nâng cao (tùy chọn)
+
+Tin nhắn nội bộ (IM/SMS nội bộ): Giám đốc hoặc nhân viên có thể gửi tin nhắn cho nhau.
+
+Chuyển tiếp cuộc gọi: Giám đốc hoặc lễ tân có thể chuyển cuộc gọi đến các phòng ban khác.
+
+Thời gian làm việc:
+
+Trong giờ hành chính: Hệ thống tự động gọi nhóm.
+
+Ngoài giờ: Tất cả cuộc gọi vào đi trực tiếp voicemail.
+
+5. Sơ đồ logic cuộc gọi
+Người gọi (*097#)
+        |
+        v
+   [Phát nhạc chờ + Hướng dẫn]
+        |
+        v
+ +------+------+------+------+
+ |      |      |      |      |
+1      2      3      4      0
+|      |      |      |      |
+HR     Sale   CSKH   Lễ tân  Giám đốc (chỉ cho Giám đốc)
+|      |      |      |      |
+Voicemail nếu không ai nhấc máy
